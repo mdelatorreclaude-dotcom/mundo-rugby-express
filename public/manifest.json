@@ -1,0 +1,13 @@
+{
+  "name": "Mundo Rugby Express",
+  "short_name": "Rugby Express",
+  "description": "Resultados, fixtures, tablas y noticias de rugby — con foco en Los Cóndores",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#003087",
+  "theme_color": "#003087",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

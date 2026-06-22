@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mundo Rugby Express</title>
+  <meta name="theme-color" content="#003087"/>
+  <meta name="description" content="Resultados, fixtures, tablas y noticias de rugby — con foco en Los Cóndores"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/logo.png"/>
+  <style>
+    :root {
+      --cl-blue:#003087; --cl-blue-light:#E6EBF5; --cl-blue-mid:#0C447C;
+      --cl-red:#D80027; --cl-red-light:#FFF0F0; --cl-red-mid:#A32D2D;
+      --bg:#f5f5f7; --surface:#ffffff; --border:rgba(0,0,0,0.1);
+      --text:#1a1a1a; --text-sec:#666; --text-ter:#999;
+      --radius:12px; --radius-sm:8px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:#0f0f0f; --surface:#1c1c1e; --border:rgba(255,255,255,0.1);
+        --text:#f0f0f0; --text-sec:#aaa; --text-ter:#666;
+        --cl-blue-light:#0a1a3a; --cl-red-light:#2a0a0a;
+      }
+    }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html,body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); }
+    .topbar { background:var(--cl-blue); padding:14px 16px; display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:100; }
+    .logo-img { width:36px; height:36px; border-radius:8px; object-fit:cover; flex-shrink:0; }
+    .brand-name { font-size:17px; font-weight:600; color:#fff; }
+    .last-updated { margin-left:auto; font-size:10px; color:rgba(255,255,255,0.5); text-align:right; line-height:1.3; }
+    .red-stripe { height:3px; background:var(--cl-red); }
+    .body { padding:14px; max-width:600px; margin:0 auto; }
+    .cat-tabs { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+    .cat-btn { padding:7px 14px; border-radius:99px; border:1px solid var(--border); background:var(--surface); color:var(--text-sec); font-size:13px; cursor:pointer; font-family:inherit; }
+    .cat-btn.ar { background:var(--cl-red); color:#fff; border-color:var(--cl-red); font-weight:600; }
+    .cat-btn.ab { background:var(--cl-blue); color:#fff; border-color:var(--cl-blue); font-weight:600; }
+    .liga-tabs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:12px; }
+    .tab-btn { padding:5px 11px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--surface); color:var(--text-sec); font-size:12px; cursor:pointer; font-family:inherit; }
+    .tab-btn.ac { background:var(--cl-red-light); color:var(--cl-red-mid); border-color:var(--cl-red); font-weight:600; }
+    .tab-btn.ab2 { background:var(--cl-blue-light); color:var(--cl-blue-mid); border-color:var(--cl-blue-mid); font-weight:600; }
+    .section-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:14px; overflow-x:auto; scrollbar-width:none; }
+    .section-tabs::-webkit-scrollbar { display:none; }
+    .sec-btn { padding:8px 13px; background:none; border:none; border-bottom:2px solid transparent; color:var(--text-sec); font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0; font-family:inherit; }
+    .sec-btn.ar { color:var(--cl-red); border-bottom-color:var(--cl-red); font-weight:600; }
+    .sec-btn.ab { color:var(--cl-blue); border-bottom-color:var(--cl-blue); font-weight:600; }
+    .condores-hero { background:var(--cl-blue); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; }
+    .condores-hero h2 { font-size:15px; font-weight:600; color:#fff; margin-bottom:2px; }
+    .condores-hero p { font-size:11px; color:rgba(255,255,255,0.65); }
+    .hero-badge { margin-left:auto; background:var(--cl-red); color:#fff; font-size:11px; font-weight:600; padding:4px 10px; border-radius:var(--radius-sm); white-space:nowrap; }
+    .league-block { margin-bottom:20px; }
+    .league-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+    .league-logo { width:40px; height:40px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:1px solid var(--border); }
+    .league-logo img { width:90%; height:90%; object-fit:contain; }
+    .league-info h3 { font-size:14px; font-weight:600; color:var(--text); }
+    .league-info p { font-size:11px; color:var(--text-sec); margin-top:1px; }
+    .match-row { padding:14px 0; border-bottom:1px solid var(--border); }
+    .match-row:last-child { border-bottom:none; }
+    .match-row.chile-match { background:var(--cl-red-light); margin:0 -14px; padding:14px; border-radius:var(--radius-sm); }
+    .match-teams-rp { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .team-rp { display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; min-width:0; }
+    .team-crest { width:50px; height:50px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:1px solid var(--border); }
+    .team-crest img { width:85%; height:85%; object-fit:contain; }
+    .team-label { font-size:12px; color:var(--text); text-align:center; line-height:1.3; }
+    .team-label.winner { font-weight:600; }
+    .score-center { display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0; min-width:95px; }
+    .score-pill { border-radius:99px; padding:3px 10px; font-size:10px; font-weight:600; }
+    .score-pill.final { background:var(--bg); color:var(--text-sec); }
+    .score-pill.semi { background:var(--cl-blue-light); color:var(--cl-blue-mid); }
+    .score-pill.win { background:#e6f4d7; color:#2d6a00; }
+    .score-pill.loss { background:var(--cl-red-light); color:var(--cl-red-mid); }
+    .score-pill.upcoming { background:var(--cl-blue-light); color:var(--cl-blue-mid); }
+    .score-main { font-size:24px; font-weight:700; color:var(--text); }
+    .score-ft { font-size:10px; color:var(--text-ter); }
+    .expand-btn { margin-top:10px; width:100%; padding:7px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--text-sec); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; font-family:inherit; }
+    .lineup-panel { display:none; margin-top:12px; border-top:1px solid var(--border); padding-top:12px; }
+    .lineup-panel.open { display:block; }
+    .lineup-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .lineup-col h4 { font-size:11px; font-weight:600; color:var(--text-sec); margin-bottom:7px; text-transform:uppercase; letter-spacing:0.05em; }
+    .player-list { list-style:none; }
+    .player-list li { font-size:12px; color:var(--text); padding:3px 0; border-bottom:1px solid var(--border); display:flex; gap:6px; }
+    .player-list li:last-child { border-bottom:none; }
+    .pnum { font-size:10px; color:var(--text-ter); min-width:18px; }
+    .subs-label { font-size:10px; color:var(--text-ter); margin:7px 0 4px; font-weight:600; }
+    .tbl-wrap { overflow-x:auto; }
+    .tbl { width:100%; border-collapse:collapse; font-size:13px; }
+    .tbl th { text-align:left; padding:6px 8px; font-weight:600; color:var(--text-sec); border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }
+    .tbl td { padding:9px 8px; color:var(--text); border-bottom:1px solid var(--border); }
+    .tbl tr:last-child td { border-bottom:none; }
+    .tbl tr.row-chile { background:var(--cl-red-light); }
+    .pos-top { color:#2d6a00; font-weight:600; }
+    .news-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:10px; }
+    .news-card.cn { border-left:3px solid var(--cl-red); border-radius:0 var(--radius) var(--radius) 0; }
+    .news-card h3 { font-size:14px; font-weight:600; color:var(--text); margin-bottom:6px; line-height:1.4; }
+    .news-card p { font-size:13px; color:var(--text-sec); line-height:1.5; }
+    .news-meta { font-size:11px; color:var(--text-ter); margin-top:8px; display:flex; gap:10px; align-items:center; }
+    .dots { display:flex; gap:3px; }
+    .dot { width:6px; height:6px; border-radius:50%; }
+    .dot-on { background:var(--cl-red); } .dot-off { background:var(--border); }
+    .summary-box { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; }
+    .summary-label { font-size:11px; font-weight:600; color:var(--text-sec); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em; }
+    .summary-box p { font-size:14px; color:var(--text-sec); line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; margin-bottom:10px; }
+    .loading-msg { color:var(--text-sec); font-size:14px; display:flex; align-items:center; gap:10px; padding:2.5rem 0; justify-content:center; }
+    .spinner { width:18px; height:18px; border:2px solid var(--border); border-top-color:var(--cl-blue); border-radius:50%; animation:spin 0.8s linear infinite; flex-shrink:0; }
+    .spinner.red { border-top-color:var(--cl-red); }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty-msg { color:var(--text-sec); font-size:14px; padding:2rem 0; text-align:center; }
+    .legend { font-size:11px; color:var(--text-ter); margin-top:6px; padding-left:4px; }
+    .no-data-banner { background:var(--cl-blue-light); border:1px solid var(--cl-blue-mid); border-radius:var(--radius-sm); padding:10px 14px; font-size:13px; color:var(--cl-blue-mid); margin-bottom:14px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <img class="logo-img" src="/logo.png" alt="Mundo Rugby Express"/>
+  <span class="brand-name">Mundo Rugby Express</span>
+  <div class="last-updated" id="lastUpdated"></div>
+</div>
+<div class="red-stripe"></div>
+
+<div class="body">
+  <div class="cat-tabs" id="catTabs"></div>
+  <div class="liga-tabs" id="ligaTabs"></div>
+  <div class="section-tabs" id="sectionTabs"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+const LIGAS = {
+  condores:[
+    {id:'condores_all',   name:'Todos',              full:'Chile Los Cóndores selección nacional', isC:true},
+    {id:'condores_trc',   name:'Rugby Championship', full:'Chile - Rugby Championship 2026', isC:true},
+    {id:'condores_wc',    name:'Clasificatorias',    full:'Chile - Clasificatorias RWC 2027', isC:true},
+    {id:'condores_tours', name:'Tours',              full:'Chile - Tours internacionales 2026', isC:true, noTabla:true},
+  ],
+  domesticas:[
+    {id:'chile',       name:'Liga Chilena',        full:'Campeonato Nacional Chile 2026'},
+    {id:'urc',         name:'URC',                 full:'United Rugby Championship 2025-26'},
+    {id:'top14',       name:'Top 14',              full:'Top 14 Francia 2025-26'},
+    {id:'premiership', name:'Premiership',         full:'Premiership Inglaterra 2025-26'},
+    {id:'superrugby',  name:'Super Rugby',         full:'Super Rugby Pacific 2026'},
+    {id:'sra',         name:'Super Rugby Américas',full:'Super Rugby Americas 2026'},
+    {id:'uar',         name:'Liga Argentina',      full:'Torneo UAR 2026'},
+  ],
+  internacionales:[
+    {id:'trc',         name:'Rugby Championship',  full:'The Rugby Championship 2026'},
+    {id:'sixnations',  name:'Six Nations',         full:'Six Nations 2026'},
+    {id:'autumnnations',name:'Autumn Nations',     full:'Autumn Nations 2026', noTabla:true},
+    {id:'tours',       name:'Tours',               full:'Tours internacionales 2026', noTabla:true},
+    {id:'rwc',         name:'Clasificatorias',     full:'RWC 2027 Clasificatorias'},
+  ]
+};
+const CATS=[{id:'condores',label:'🦅 Los Cóndores'},{id:'domesticas',label:'Ligas'},{id:'internacionales',label:'Internacionales'}];
+const LEAGUE_LOGOS={
+  urc:'https://upload.wikimedia.org/wikipedia/en/thumb/8/80/United_Rugby_Championship_logo.svg/200px-United_Rugby_Championship_logo.svg.png',
+  top14:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Logo_Top_14_2022.svg/200px-Logo_Top_14_2022.svg.png',
+  premiership:'https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/Premiership_Rugby_logo.svg/200px-Premiership_Rugby_logo.svg.png',
+  superrugby:'https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/Super_Rugby_Pacific_logo.svg/200px-Super_Rugby_Pacific_logo.svg.png',
+  trc:'https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/The_Rugby_Championship_Logo.svg/200px-The_Rugby_Championship_Logo.svg.png',
+  condores_trc:'https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/The_Rugby_Championship_Logo.svg/200px-The_Rugby_Championship_Logo.svg.png',
+  sixnations:'https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Six_Nations_Championship_logo.svg/200px-Six_Nations_Championship_logo.svg.png',
+};
+const LEAGUE_EMOJI={chile:'🇨🇱',sra:'🌎',uar:'🇦🇷',autumnnations:'🍂',tours:'✈️',rwc:'🏆',condores_all:'🦅',condores_wc:'🏆',condores_tours:'✈️'};
+const CRESTS={
+  'leinster':'https://upload.wikimedia.org/wikipedia/en/thumb/7/7B/Leinster_rugby_crest.svg/200px-Leinster_rugby_crest.svg.png',
+  'bulls':'https://upload.wikimedia.org/wikipedia/en/thumb/5/55/Blue_Bulls_rugby_logo.svg/200px-Blue_Bulls_rugby_logo.svg.png',
+  'toulouse':'https://upload.wikimedia.org/wikipedia/fr/thumb/6/63/Logo_Stade_toulousain.svg/200px-Logo_Stade_toulousain.svg.png',
+  'racing 92':'https://upload.wikimedia.org/wikipedia/fr/thumb/a/ae/Logo_Racing_92.svg/200px-Logo_Racing_92.svg.png',
+  'munster':'https://upload.wikimedia.org/wikipedia/en/thumb/6/6e/Munster_Rugby_crest.svg/200px-Munster_Rugby_crest.svg.png',
+  'ulster':'https://upload.wikimedia.org/wikipedia/en/thumb/e/e6/Ulster_Rugby_crest.svg/200px-Ulster_Rugby_crest.svg.png',
+  'stormers':'https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Stormers_Logo.svg/200px-Stormers_Logo.svg.png',
+  'saracens':'https://upload.wikimedia.org/wikipedia/en/thumb/a/ac/Saracens_FC_logo.svg/200px-Saracens_FC_logo.svg.png',
+  'bath':'https://upload.wikimedia.org/wikipedia/en/thumb/2/29/Bath_Rugby_crest.svg/200px-Bath_Rugby_crest.svg.png',
+  'chiefs':'https://upload.wikimedia.org/wikipedia/en/thumb/c/c4/Chiefs-logo.svg/200px-Chiefs-logo.svg.png',
+  'blues':'https://upload.wikimedia.org/wikipedia/en/thumb/b/bf/Blues_rugby_logo.svg/200px-Blues_rugby_logo.svg.png',
+  'crusaders':'https://upload.wikimedia.org/wikipedia/en/thumb/8/87/Crusaders_rugby_logo.svg/200px-Crusaders_rugby_logo.svg.png',
+  'highlanders':'https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Highlanders_rugby_logo.svg/200px-Highlanders_rugby_logo.svg.png',
+  'hurricanes':'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Hurricanes_rugby_logo.svg/200px-Hurricanes_rugby_logo.svg.png',
+};
+const FLAGS={'chile':'🇨🇱','los cóndores':'🇨🇱','argentina':'🇦🇷','los pumas':'🇦🇷','nueva zelanda':'🇳🇿','all blacks':'🇳🇿','sudáfrica':'🇿🇦','springboks':'🇿🇦','australia':'🇦🇺','wallabies':'🇦🇺','inglaterra':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','irlanda':'🇮🇪','francia':'🇫🇷','gales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿','escocia':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','italia':'🇮🇹','uruguay':'🇺🇾','japón':'🇯🇵','fiyi':'🇫🇯','tonga':'🇹🇴','samoa':'🇼🇸','georgia':'🇬🇪','portugal':'🇵🇹','españa':'🇪🇸','estados unidos':'🇺🇸','brasil':'🇧🇷','namibia':'🇳🇦'};
+const flag=n=>FLAGS[n?.toLowerCase()]||'';
+const isChile=n=>['chile','los cóndores','cóndores'].includes(n?.toLowerCase());
+
+let activeCat='condores',activeLiga='condores_all',activeSection='resultados';
+const lineupCache={};
+
+function getLiga(){return LIGAS[activeCat].find(l=>l.id===activeLiga)||LIGAS[activeCat][0];}
+function isC(){return activeCat==='condores';}
+function ac(){return isC()?'ar':'ab';}
+function getSections(){
+  const liga=getLiga();
+  const s=[{id:'resultados',label:'Resultados'},{id:'proximos',label:'Próximos'}];
+  if(!liga.noTabla)s.push({id:'tabla',label:'Tabla'});
+  s.push({id:'noticias',label:isC()?'Noticias 🦅':'Noticias'});
+  s.push({id:'resumen',label:'Resumen'});
+  return s;
+}
+function renderTabs(){
+  document.getElementById('catTabs').innerHTML=CATS.map(c=>`<button class="cat-btn ${c.id===activeCat?(c.id==='condores'?'ar':'ab'):''}" onclick="switchCat('${c.id}',this)">${c.label}</button>`).join('');
+  document.getElementById('ligaTabs').innerHTML=LIGAS[activeCat].map(l=>`<button class="tab-btn ${l.id===activeLiga?(isC()?'ac':'ab2'):''}" onclick="switchLiga('${l.id}')">${l.name}</button>`).join('');
+  const secs=getSections();
+  if(!secs.find(s=>s.id===activeSection))activeSection='resultados';
+  document.getElementById('sectionTabs').innerHTML=secs.map(s=>`<button class="sec-btn ${s.id===activeSection?ac():''}" onclick="switchSection('${s.id}',this)">${s.label}</button>`).join('');
+}
+function switchCat(cat,btn){activeCat=cat;activeLiga=LIGAS[cat][0].id;activeSection='resultados';renderTabs();loadContent();}
+function switchLiga(id){activeLiga=id;renderTabs();loadContent();}
+function switchSection(s,b){activeSection=s;renderTabs();loadContent();}
+
+function showLoading(){
+  const cls=isC()?'spinner red':'spinner';
+  document.getElementById('content').innerHTML=`<div class="loading-msg"><div class="${cls}"></div> Cargando...</div>`;
+}
+
+async function fetchData(liga, section){
+  const r=await fetch(`/api/data?liga=${liga}&section=${section}`);
+  const json=await r.json();
+  if(json.lastUpdated){
+    const d=new Date(json.lastUpdated);
+    const fmt=d.toLocaleDateString('es-CL',{weekday:'short',day:'numeric',month:'short'});
+    const time=d.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lastUpdated').innerHTML=`Actualizado<br>${fmt} ${time}`;
+  }
+  return json.data;
+}
+
+async function loadContent(){
+  showLoading();
+  const liga=getLiga();
+  const isIntl=activeCat==='internacionales'||isC();
+  try{
+    const data=await fetchData(activeLiga, activeSection);
+    if(!data){
+      document.getElementById('content').innerHTML=`<div class="no-data-banner">⏳ Los datos se cargarán en la próxima actualización programada. El agente corre automáticamente los viernes, sábados, domingos y lunes.</div>`;
+      return;
+    }
+    if(activeSection==='resultados') renderResultados(data||[], isIntl, liga);
+    else if(activeSection==='proximos') renderProximos(data||[], isIntl, liga);
+    else if(activeSection==='tabla') renderTabla(data||[]);
+    else if(activeSection==='noticias') renderNoticias(data||[], liga.full);
+    else if(activeSection==='resumen') renderResumen(data||'', liga.full);
+  }catch(e){
+    document.getElementById('content').innerHTML=`<p style="color:#D80027;font-size:14px;padding:1.5rem 0;text-align:center">Error al cargar. Verificá tu conexión.</p>`;
+  }
+}
+
+function crestHTML(name){
+  const key=name?.toLowerCase().trim();
+  if(CRESTS[key])return`<img src="${CRESTS[key]}" alt="${name}" onerror="this.style.display='none';this.parentNode.innerHTML='<span style=font-size:26px>${flag(name)||'🏉'}</span>'"/>`;
+  const f=flag(name);
+  return f?`<span style="font-size:28px">${f}</span>`:`<span style="font-size:22px">🏉</span>`;
+}
+function leagueLogoHTML(lid){
+  if(LEAGUE_LOGOS[lid])return`<img src="${LEAGUE_LOGOS[lid]}" alt="" onerror="this.style.display='none'"/>`;
+  return`<span style="font-size:20px">${LEAGUE_EMOJI[lid]||'🏉'}</span>`;
+}
+function condoresHero(title,sub){
+  return`<div class="condores-hero"><span style="font-size:36px">🦅</span><div><h2>${title}</h2><p>${sub}</p></div><span class="hero-badge">🇨🇱 Rugby</span></div>`;
+}
+function matchRowHTML(p,isIntl,lidx,i){
+  const winner=p.score_local>p.score_visitante?'local':p.score_visitante>p.score_local?'visitante':'';
+  const chilePlay=isChile(p.local)||isChile(p.visitante);
+  const chileWon=(isChile(p.local)&&winner==='local')||(isChile(p.visitante)&&winner==='visitante');
+  const mid=p.id||`m${lidx}${i}`;
+  const pillCls=chilePlay?(chileWon?'win':'loss'):'final';
+  const pillTxt=chilePlay?(chileWon?'Victoria':'Derrota'):'Final';
+  return`<div class="match-row ${chilePlay?'chile-match':''}">
+    <div class="match-teams-rp">
+      <div class="team-rp"><div class="team-crest">${crestHTML(p.local)}</div><span class="team-label ${winner==='local'?'winner':''}">${p.local}</span></div>
+      <div class="score-center"><span class="score-pill ${pillCls}">${pillTxt}</span><span class="score-main">${p.score_local} - ${p.score_visitante}</span><span class="score-ft">FT${p.ciudad?' · '+p.ciudad:''}</span></div>
+      <div class="team-rp"><div class="team-crest">${crestHTML(p.visitante)}</div><span class="team-label ${winner==='visitante'?'winner':''}">${p.visitante}</span></div>
+    </div>
+    <button class="expand-btn" onclick="loadLineup('${mid}','${p.local}','${p.visitante}','${p.fecha}',this)">👥 Ver plantillas</button>
+    <div class="lineup-panel" id="panel-${mid}"></div>
+  </div>`;
+}
+function renderResultados(torneos,isIntl,liga){
+  if(!torneos.length||!torneos.some(t=>t.partidos?.length)){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay resultados recientes.</p>`;return;}
+  let html=isC()?condoresHero('Los Cóndores','Selección nacional de Chile'):'';
+  torneos.forEach((t,ti)=>{
+    if(!t.partidos?.length)return;
+    html+=`<div class="league-block"><div class="league-header"><div class="league-logo">${leagueLogoHTML(activeLiga)}</div><div class="league-info"><h3>${t.liga||liga.full}</h3><p>${t.round||''}</p></div></div>${t.partidos.map((p,i)=>matchRowHTML(p,isIntl,ti,i)).join('')}</div>`;
+  });
+  document.getElementById('content').innerHTML=html;
+}
+function renderProximos(partidos,isIntl,liga){
+  if(!partidos.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay próximos partidos.</p>`;return;}
+  let html=isC()?condoresHero('Próximos partidos','Los Cóndores 2026'):'';
+  html+=`<div class="league-block"><div class="league-header"><div class="league-logo">${leagueLogoHTML(activeLiga)}</div><div class="league-info"><h3>${liga.full}</h3><p>Próximos partidos</p></div></div>${partidos.map(p=>{
+    const chilePlay=isChile(p.local)||isChile(p.visitante);
+    return`<div class="match-row ${chilePlay?'chile-match':''}"><div class="match-teams-rp"><div class="team-rp"><div class="team-crest">${crestHTML(p.local)}</div><span class="team-label">${p.local}</span></div><div class="score-center"><span class="score-pill ${chilePlay?'win':'upcoming'}">Próximo</span><span style="font-size:15px;font-weight:600;color:var(--text)">${p.fecha}${p.hora?' · '+p.hora:''}</span>${p.ciudad?`<span class="score-ft">${p.ciudad}</span>`:''}</div><div class="team-rp"><div class="team-crest">${crestHTML(p.visitante)}</div><span class="team-label">${p.visitante}</span></div></div></div>`;
+  }).join('')}</div>`;
+  document.getElementById('content').innerHTML=html;
+}
+function renderTabla(equipos){
+  if(!equipos.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay tabla disponible.</p>`;return;}
+  const topN=(activeCat==='internacionales'||isC())?2:4;
+  document.getElementById('content').innerHTML=`<div class="card" style="padding:8px 12px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:28px">#</th><th>Equipo</th><th style="text-align:center;width:36px">PJ</th><th style="text-align:center;width:36px">PG</th><th style="text-align:center;width:36px">PP</th><th style="text-align:center;width:40px">PTS</th></tr></thead><tbody>${equipos.map(e=>`<tr class="${isChile(e.equipo)?'row-chile':''}"><td class="${e.pos<=topN?'pos-top':''}">${e.pos}</td><td style="font-weight:${e.pos<=topN?'600':'400'}">${flag(e.equipo)?flag(e.equipo)+' ':''}${e.equipo}</td><td style="text-align:center;color:var(--text-sec)">${e.pj}</td><td style="text-align:center;color:var(--text-sec)">${e.pg}</td><td style="text-align:center;color:var(--text-sec)">${e.pp}</td><td style="text-align:center;font-weight:600">${e.pts}</td></tr>`).join('')}</tbody></table></div></div><p class="legend"><span style="color:#2d6a00">■</span> Clasificados &nbsp;<span style="background:var(--cl-red-light);padding:1px 5px;border-radius:4px;color:var(--cl-red-mid)">■</span> Chile</p>`;
+}
+function renderNoticias(noticias,ligaName){
+  if(!noticias.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay noticias disponibles.</p>`;return;}
+  let html=isC()?condoresHero('Noticias de Los Cóndores','Toda la actualidad del rugby chileno'):'';
+  html+=noticias.map(n=>`<div class="news-card ${isC()?'cn':''}"><h3>${n.titulo}</h3><p>${n.resumen}</p><div class="news-meta"><span>🌐 ${n.fuente}</span><div class="dots">${[1,2,3].map(i=>`<span class="dot ${i<=n.relevancia?'dot-on':'dot-off'}"></span>`).join('')}</div></div></div>`).join('');
+  document.getElementById('content').innerHTML=html;
+}
+function renderResumen(text,ligaName){
+  let html=isC()?condoresHero('Resumen Los Cóndores','Análisis completo del equipo'):'';
+  html+=`<div class="summary-box"><p class="summary-label">${ligaName}</p><p>${text||'Sin resumen disponible aún.'}</p></div>`;
+  document.getElementById('content').innerHTML=html;
+}
+async function loadLineup(matchId,local,visitante,fecha,el){
+  const panel=document.getElementById('panel-'+matchId);
+  if(panel.classList.contains('open')){panel.classList.remove('open');el.innerHTML='👥 Ver plantillas';return;}
+  panel.classList.add('open');el.innerHTML='▲ Ocultar plantillas';
+  if(lineupCache[matchId]){panel.innerHTML=lineupCache[matchId];return;}
+  panel.innerHTML=`<div class="loading-msg" style="padding:10px 0"><div class="spinner" style="width:14px;height:14px"></div> Buscando plantillas...</div>`;
+  try{
+    const r=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:`Busca en rugbypass.com la plantilla del partido ${local} vs ${visitante} del ${fecha} 2026. SOLO JSON: {"local_titulares":["1. Nombre",...x15],"local_suplentes":["16. Nombre",...x8],"visitante_titulares":["1. Nombre",...],"visitante_suplentes":["16. Nombre",...]} Si no hay: {"error":"sin datos"}`}]})});
+    const d=await r.json();
+    const text=d.content.map(b=>b.type==='text'?b.text:'').join('');
+    let data;try{data=JSON.parse(text.replace(/```json|```/g,'').trim());}catch(e){data=null;}
+    if(!data||data.error){panel.innerHTML=`<p style="font-size:13px;color:var(--text-sec);padding:8px 0">Plantilla no disponible.</p>`;}
+    else{
+      const rl=arr=>(arr||[]).map(p=>{const m=p.match(/^(\d+)\.\s*(.+)$/);return`<li><span class="pnum">${m?m[1]:''}</span>${m?m[2]:p}</li>`;}).join('');
+      const html=`<div class="lineup-grid"><div class="lineup-col"><h4>${local}</h4><ul class="player-list">${rl(data.local_titulares)}</ul>${data.local_suplentes?.length?`<p class="subs-label">Suplentes</p><ul class="player-list">${rl(data.local_suplentes)}</ul>`:''}</div><div class="lineup-col"><h4>${visitante}</h4><ul class="player-list">${rl(data.visitante_titulares)}</ul>${data.visitante_suplentes?.length?`<p class="subs-label">Suplentes</p><ul class="player-list">${rl(data.visitante_suplentes)}</ul>`:''}</div></div>`;
+      panel.innerHTML=html;lineupCache[matchId]=html;
+    }
+  }catch(e){panel.innerHTML=`<p style="font-size:13px;color:#D80027;padding:8px 0">Error al cargar plantilla.</p>`;}
+}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+renderTabs();loadContent();
+</script>
+</body>
+</html>
