@@ -230,15 +230,31 @@ async function loadContent(){
   const isIntl=activeCat==='internacionales'||isC();
   try{
     const data=await fetchData(activeLiga, activeSection);
-    if(!data){
-      document.getElementById('content').innerHTML=`<div class="no-data-banner">⏳ Los datos se cargarán en la próxima actualización programada. El agente corre automáticamente los viernes, sábados, domingos y lunes.</div>`;
+    if(data===null||data===undefined){
+      document.getElementById('content').innerHTML=`<div class="no-data-banner">⏳ Sin datos disponibles aún.</div>`;
       return;
     }
-    if(activeSection==='resultados') renderResultados(data||[], isIntl, liga);
-    else if(activeSection==='proximos') renderProximos(data||[], isIntl, liga);
-    else if(activeSection==='tabla') renderTabla(data||[]);
-    else if(activeSection==='noticias') renderNoticias(data||[], liga.full);
-    else if(activeSection==='resumen') renderResumen(data||'', liga.full);
+    if(activeSection==='resultados'){
+      // Soporta tanto formato nuevo {estado,torneos} como array directo
+      const torneos = Array.isArray(data) ? data : (data.torneos||[]);
+      const estado  = data.estado||'';
+      const campeon = data.campeon||'';
+      renderResultados(torneos, isIntl, liga, estado, campeon);
+    } else if(activeSection==='proximos'){
+      const partidos = Array.isArray(data) ? data : (data.partidos||[]);
+      const estado   = data.estado||'';
+      const proxTemp = data.proxima_temporada||'';
+      renderProximos(partidos, isIntl, liga, estado, proxTemp);
+    } else if(activeSection==='tabla'){
+      const equipos  = Array.isArray(data) ? data : (data.equipos||[]);
+      const campeon  = data.campeon||'';
+      const temporada= data.temporada||'';
+      renderTabla(equipos, campeon, temporada);
+    } else if(activeSection==='noticias'){
+      renderNoticias(Array.isArray(data)?data:(data.noticias||data||[]), liga.full);
+    } else if(activeSection==='resumen'){
+      renderResumen(typeof data==='string'?data:(data.resumen||''), liga.full);
+    }
   }catch(e){
     document.getElementById('content').innerHTML=`<p style="color:#D80027;font-size:14px;padding:1.5rem 0;text-align:center">Error al cargar. Verificá tu conexión.</p>`;
   }
@@ -274,28 +290,41 @@ function matchRowHTML(p,isIntl,lidx,i){
     <div class="lineup-panel" id="panel-${mid}"></div>
   </div>`;
 }
-function renderResultados(torneos,isIntl,liga){
-  if(!torneos.length||!torneos.some(t=>t.partidos?.length)){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay resultados recientes.</p>`;return;}
+function renderResultados(torneos,isIntl,liga,estado,campeon){
+  if(!torneos.length||!torneos.some(t=>t.partidos?.length)){
+    const msg=estado==='finalizado'?'Torneo finalizado — sin partidos disponibles.':'No hay resultados recientes.';
+    document.getElementById('content').innerHTML=`<p class="empty-msg">${msg}</p>`;return;
+  }
   let html=isC()?condoresHero('Los Cóndores','Selección nacional de Chile'):'';
+  if(estado==='finalizado') html+=`<div class="no-data-banner" style="background:#e6f4d7;border-color:#2d6a00;color:#2d6a00">🏆 Torneo finalizado${campeon?' · Campeón: '+campeon:''}</div>`;
   torneos.forEach((t,ti)=>{
     if(!t.partidos?.length)return;
     html+=`<div class="league-block"><div class="league-header"><div class="league-logo">${leagueLogoHTML(activeLiga)}</div><div class="league-info"><h3>${t.liga||liga.full}</h3><p>${t.round||''}</p></div></div>${t.partidos.map((p,i)=>matchRowHTML(p,isIntl,ti,i)).join('')}</div>`;
   });
   document.getElementById('content').innerHTML=html;
 }
-function renderProximos(partidos,isIntl,liga){
-  if(!partidos.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay próximos partidos.</p>`;return;}
+function renderProximos(partidos,isIntl,liga,estado,proxTemp){
   let html=isC()?condoresHero('Próximos partidos','Los Cóndores 2026'):'';
+  if(!partidos.length){
+    const msg=estado==='torneo finalizado'
+      ?`🏁 El torneo finalizó.${proxTemp?' Próxima temporada: '+proxTemp:''}`
+      :'No hay próximos partidos confirmados.';
+    html+=`<p class="empty-msg">${msg}</p>`;
+    document.getElementById('content').innerHTML=html;return;
+  }
   html+=`<div class="league-block"><div class="league-header"><div class="league-logo">${leagueLogoHTML(activeLiga)}</div><div class="league-info"><h3>${liga.full}</h3><p>Próximos partidos</p></div></div>${partidos.map(p=>{
     const chilePlay=isChile(p.local)||isChile(p.visitante);
     return`<div class="match-row ${chilePlay?'chile-match':''}"><div class="match-teams-rp"><div class="team-rp"><div class="team-crest">${crestHTML(p.local)}</div><span class="team-label">${p.local}</span></div><div class="score-center"><span class="score-pill ${chilePlay?'win':'upcoming'}">Próximo</span><span style="font-size:15px;font-weight:600;color:var(--text)">${p.fecha}${p.hora?' · '+p.hora:''}</span>${p.ciudad?`<span class="score-ft">${p.ciudad}</span>`:''}</div><div class="team-rp"><div class="team-crest">${crestHTML(p.visitante)}</div><span class="team-label">${p.visitante}</span></div></div></div>`;
   }).join('')}</div>`;
   document.getElementById('content').innerHTML=html;
 }
-function renderTabla(equipos){
+function renderTabla(equipos,campeon,temporada){
   if(!equipos.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay tabla disponible.</p>`;return;}
   const topN=(activeCat==='internacionales'||isC())?2:4;
-  document.getElementById('content').innerHTML=`<div class="card" style="padding:8px 12px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:28px">#</th><th>Equipo</th><th style="text-align:center;width:36px">PJ</th><th style="text-align:center;width:36px">PG</th><th style="text-align:center;width:36px">PP</th><th style="text-align:center;width:40px">PTS</th></tr></thead><tbody>${equipos.map(e=>`<tr class="${isChile(e.equipo)?'row-chile':''}"><td class="${e.pos<=topN?'pos-top':''}">${e.pos}</td><td style="font-weight:${e.pos<=topN?'600':'400'}">${flag(e.equipo)?flag(e.equipo)+' ':''}${e.equipo}</td><td style="text-align:center;color:var(--text-sec)">${e.pj}</td><td style="text-align:center;color:var(--text-sec)">${e.pg}</td><td style="text-align:center;color:var(--text-sec)">${e.pp}</td><td style="text-align:center;font-weight:600">${e.pts}</td></tr>`).join('')}</tbody></table></div></div><p class="legend"><span style="color:#2d6a00">■</span> Clasificados &nbsp;<span style="background:var(--cl-red-light);padding:1px 5px;border-radius:4px;color:var(--cl-red-mid)">■</span> Chile</p>`;
+  let html='';
+  if(campeon) html+=`<div class="no-data-banner" style="background:#e6f4d7;border-color:#2d6a00;color:#2d6a00">🏆 Campeón ${temporada||''}: ${campeon}</div>`;
+  html+=`<div class="card" style="padding:8px 12px"><div class="tbl-wrap"><table class="tbl"><thead><tr><th style="width:28px">#</th><th>Equipo</th><th style="text-align:center;width:36px">PJ</th><th style="text-align:center;width:36px">PG</th><th style="text-align:center;width:36px">PP</th><th style="text-align:center;width:40px">PTS</th></tr></thead><tbody>${equipos.map(e=>`<tr class="${isChile(e.equipo)?'row-chile':''}"><td class="${e.pos<=topN?'pos-top':''}">${e.pos}</td><td style="font-weight:${e.pos<=topN?'600':'400'}">${flag(e.equipo)?flag(e.equipo)+' ':''}${e.equipo}</td><td style="text-align:center;color:var(--text-sec)">${e.pj}</td><td style="text-align:center;color:var(--text-sec)">${e.pg}</td><td style="text-align:center;color:var(--text-sec)">${e.pp}</td><td style="text-align:center;font-weight:600">${e.pts}</td></tr>`).join('')}</tbody></table></div></div><p class="legend"><span style="color:#2d6a00">■</span> Clasificados &nbsp;<span style="background:var(--cl-red-light);padding:1px 5px;border-radius:4px;color:var(--cl-red-mid)">■</span> Chile</p>`;
+  document.getElementById('content').innerHTML=html;
 }
 function renderNoticias(noticias,ligaName){
   if(!noticias.length){document.getElementById('content').innerHTML=`<p class="empty-msg">No hay noticias disponibles.</p>`;return;}
