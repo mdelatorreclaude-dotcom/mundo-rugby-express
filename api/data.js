@@ -27,16 +27,25 @@ async function kvGet(key) {
       headers: { Authorization: `Bearer ${process.env.KV_REST_API_READ_ONLY_TOKEN}` }
     });
     const json = await r.json();
-    return json.result || null;
+    let result = json.result;
+    if (!result) return null;
+    // Upstash a veces devuelve {value, ex} en vez del valor directo
+    try {
+      const parsed = JSON.parse(result);
+      if (parsed && typeof parsed === 'object' && 'value' in parsed) {
+        result = parsed.value;
+      }
+    } catch(e) {}
+    return result;
   } catch(e) { return null; }
 }
 
 async function kvSet(key, value) {
   try {
-    await fetch(`${process.env.KV_REST_API_URL}/set/${key}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value, ex: 60 * 60 * 6 })
+    // Usar SET con EX como parámetros separados (sintaxis correcta de Upstash REST)
+    await fetch(`${process.env.KV_REST_API_URL}/set/${key}/${encodeURIComponent(value)}/EX/21600`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}` }
     });
   } catch(e) {}
 }
